@@ -1,7 +1,10 @@
 import React from 'react';
+import AiTest from './components/AITest';
 
 const App = () => {
-  return <div>App React</div>;
+  return (
+    <AiTest />
+  );
 };
 
 export default App;
