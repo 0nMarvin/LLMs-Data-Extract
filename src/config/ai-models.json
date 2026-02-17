@@ -1,6 +1,6 @@
 [
   {
-    "id": "deepseek/deepseek-r1-0528:free",
+    "id": "deepseek/deepseek-r1-0528",
     "name": "DeepSeek: R1 0528",
     "provider": "DeepSeek",
     "description": "May 28th update to the original DeepSeek R1 Performance on par with OpenAI o1, but open-sourced and with fully open reasoning tokens. It's 671B parameters in size, with 37B active in an inference pass."
