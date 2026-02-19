@@ -27,14 +27,14 @@ export const PROMPT_FLOWS = {
     
     format: (tema, colunas, filtros, quantidade) => {
       let template = `TEMA PRINCIPAL: {TEMA}
-ESQUEMA DE COLUNAS: {COLUNAS}
-RESTRIÇÕES OBRIGATÓRIAS: {FILTROS}
-QUANTIDADE ALVO: {QUANTIDADE}
+    ESQUEMA DE COLUNAS: {COLUNAS}
+    RESTRIÇÕES OBRIGATÓRIAS: {FILTROS}
+    QUANTIDADE ALVO: {QUANTIDADE}
 
-CHECKLIST FINAL:
-- O registro satisfaz "{TEMA}"?
-- Respeita rigorosamente "{FILTROS}"?
-- É factualmente verídico?`;
+    CHECKLIST FINAL:
+    - O registro satisfaz "{TEMA}"?
+    - Respeita rigorosamente "{FILTROS}"?
+    - É factualmente verídico?`;
 
       return template
         .replaceAll("{TEMA}", tema)

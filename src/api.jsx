@@ -1,16 +1,15 @@
-export const API_URL = import.meta.env.VITE_OPENROUTER_URL;
+import { env } from "./helpers/envVerify";
 
 export function POST_PROMPT(body, modelId) {
   return {
-    url: API_URL,
+    url: env.VITE_OPENROUTER_URL, 
     options: {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`,
+        'Authorization': `Bearer ${env.VITE_OPENROUTER_KEY}`,
         'Content-Type': 'application/json',
-        // Opcional
-        'HTTP-Referer': 'http://localhost:5173', 
-        'X-Title': 'Meu App Dev' 
+        'HTTP-Referer': `${env.VITE_URL}`, 
+        'X-Title': 'Mediador de Dados AI' 
       },
       body: JSON.stringify({
         model: modelId,
@@ -20,6 +19,7 @@ export function POST_PROMPT(body, modelId) {
             content: body 
           }
         ],
+        temperature: 0,
       }),
     },
   };

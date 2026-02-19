@@ -12,7 +12,7 @@
     "description": "gpt-oss-20b is an open-weight 21B parameter model released by OpenAI under the Apache 2.0 license. It uses a Mixture-of-Experts (MoE) architecture with 3.6B active parameters per forward pass, optimized for lower-latency inference and deployability on consumer or single-GPU hardware."
   },
   {
-    "id": "meta-llama/llama-3.2-3b-instruct:free",
+    "id": "meta-llama/llama-3.2-3b-instruct",
     "name": "Llama 3.2 3B Instruct",
     "provider": "Meta",
     "description": "Llama 3.2 3B is a 3-billion-parameter multilingual large language model, optimized for advanced natural language processing tasks like dialogue generation, reasoning, and summarization."
