@@ -1,0 +1,110 @@
+import { useListParser } from "../hooks/useListParser"; 
+import { useEffect } from "react";
+
+const temaTeste = "Sistema de Rpg";
+
+const atributosJSON = JSON.stringify([
+  "ID", "Nome", "Editora", "Ano de Lançamento", "Gênero Principal",
+  "Mecânica de Dados", "Tipo de Sistema", "Ambientação",
+  "Complexidade", "Versão Atual", "Público-Alvo", "Status de Publicação"
+]);
+
+const filtrosJSON = JSON.stringify([
+  "Usa dados de 10 lados (d10)", "Sistema d20 (dados de 20 lados)",
+  "Ambientação cyberpunk", "Regras para magia de sangue",
+  "Focado em horror cósmico", "Cenário de fantasia medieval",
+  "Mecânicas de sanidade mental", "Classe 'Ladino' presente",
+  "Publicado originalmente nos anos 2000", "Suporte para campanhas solo",
+  "Raças jogáveis: anões/elfos", "Sistema de pontos de heroísmo"
+]);
+
+const listaFinalJSON = `Aqui estão os sistemas:
+[
+  {
+    "ID": 2,
+    "Nome": "Vampiro: A Máscara",
+    "Editora": "White Wolf",
+    "Ano de Lançamento": 2000,
+    "Gênero Principal": "Horror",
+    "Mecânica de Dados": "d10",
+    "Tipo de Sistema": "Narrativo, solo, grupo",
+    "Ambientação": "Mundo das Trevas",
+    "Complexidade": "Baixa",
+    "Versão Atual": "5.0",
+    "Público-Alvo": "Jogadores Experientes",
+    "Status de Publicação": "Ativo"
+  },
+  {
+    "ID": 4,
+    "Nome": "Legend of the Five Rings 3ª Edição",
+    "Editora": "Alderac Entertainment Group",
+    "Ano de Lançamento": 2005,
+    "Gênero Principal": "Fantasia Oriental",
+    "Mecânica de Dados": "d10, anéis",
+    "Tipo de Sistema": "Grupo, solo, narrativo",
+    "Ambientação": "Rokugan",
+    "Complexidade": "Alta",
+    "Versão Atual": "4.0",
+    "Público-Alvo": "Jogadores Experientes",
+    "Status de Publicação": "Descontinuado"
+  }
+]`;
+
+export function AITest() {
+  const { generationData, setTema, modelarResposta, dadoResposta } = useListParser();
+  
+  useEffect(() => {
+    setTema(temaTeste);
+    modelarResposta(atributosJSON, "atributos");
+    modelarResposta(filtrosJSON, "filtros");
+    dadoResposta(listaFinalJSON);
+  }, []);
+
+  // Função para disparar o log no console
+  const handleLogData = () => {
+    console.log("🚀 InOut Debug - Generation Data:", generationData);
+    alert("Dados enviados para o Console (F12)!");
+  };
+
+  return (
+    <section style={{ padding: '20px', fontFamily: 'monospace', backgroundColor: '#1e1e1e', color: '#fff' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>🛠️ Debug InOut - Teste de Modelagem</h2>
+        <button 
+          onClick={handleLogData}
+          style={{
+            padding: '10px 15px',
+            backgroundColor: '#00ff00',
+            color: '#000',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+          📄 LOG GENERATION DATA
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px', border: '1px solid #444', padding: '10px', marginTop: '10px' }}>
+        <p><strong>Tema:</strong> {generationData.tema}</p>
+        <p><strong>Atributos Detectados:</strong> {generationData.atributos?.join(", ") || "Falha na validação"}</p>
+        <p><strong>Filtros Detectados:</strong> {generationData.filtros?.join(", ") || "Falha na validação"}</p>
+      </div>
+
+      <h3>📄 Resultado Formatado:</h3>
+      <div style={{ whiteSpace: 'pre-wrap', background: '#2d2d2d', padding: '15px', borderRadius: '8px' }}>
+        {generationData.finalList?.list || "Processando lista..."}
+      </div>
+
+      <details style={{ marginTop: '20px' }}>
+        <summary style={{ cursor: 'pointer', color: '#00ff00' }}>Ver JSON Completo do Estado</summary>
+        <pre style={{ fontSize: '12px', background: '#000', padding: '10px', marginTop: '5px' }}>
+          {JSON.stringify(generationData, null, 2)}
+        </pre>
+      </details>
+    </section>
+  );
+}
+
+export default AITest;

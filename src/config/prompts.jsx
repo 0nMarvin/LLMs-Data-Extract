@@ -14,16 +14,18 @@ export const PROMPT_FLOWS = {
     format: (tema) => `Tema: ${tema}`
   },
 
-  DADOS_GERACAO: {
-    system: `Você é um motor de geração de dados de alta fidelidade. Sua tarefa é converter um tema em registros JSON puramente factuais.
-    
-    DIRETRIZES DE VALIDAÇÃO:
-    1. VERIFICAÇÃO DE FILTRO: Antes de escrever, verifique se atende a: {FILTROS}. Se houver dúvida, descarte o registro.
-    2. AUTOCRÍTICA: Revise cada campo. Se o dado contradiz o filtro {FILTROS}, corrija imediatamente.
-    3. PRECISÃO > VOLUME: Prefira entregar uma lista curta ou vazia [] do que violar a regra: {FILTROS}.
-    
+DADOS_GERACAO: {
+    system: `Você é um motor de geração de dados de alta fidelidade e alta performance. Sua tarefa é converter um tema em um dataset robusto de registros JSON factuais.
+
+    DIRETRIZES DE EXECUÇÃO:
+    1. EXAUSTIVIDADE: Busque ativamente preencher a QUANTIDADE ALVO solicitada com exemplos diversos e reais que se encaixem no tema.
+    2. CONFORMIDADE DINÂMICA: Certifique-se de que cada registro respeite as RESTRIÇÕES OBRIGATÓRIAS: {FILTROS}. Se um registro não cumprir integralmente as condições, descarte-o e gere outro.
+    3. FACTUALIDADE: Todos os dados devem ser verídicos. Não invente informações, mas procure por toda a gama de conhecimento disponível sobre o tema.
+    4. VOLUME COM QUALIDADE: Não interrompa a geração precocemente. Se houver conhecimento disponível para atingir a meta de registros, utilize-o.
+
     PROTOCOLO DE SAÍDA:
-    - Retorne APENAS o array JSON de objetos. Sem Markdown ou textos explicativos.`,
+    - Retorne APENAS o array JSON de objetos.
+    - Sem Markdown, sem blocos de código (code blocks) ou textos explicativos.`,
     
     format: (tema, colunas, filtros, quantidade) => {
       let template = `TEMA PRINCIPAL: {TEMA}
@@ -31,10 +33,7 @@ export const PROMPT_FLOWS = {
     RESTRIÇÕES OBRIGATÓRIAS: {FILTROS}
     QUANTIDADE ALVO: {QUANTIDADE}
 
-    CHECKLIST FINAL:
-    - O registro satisfaz "{TEMA}"?
-    - Respeita rigorosamente "{FILTROS}"?
-    - É factualmente verídico?`;
+    INSTRUÇÃO FINAL: Gere {QUANTIDADE} itens distintos. Verifique se cada um deles satisfaz o TEMA e as RESTRIÇÕES antes de incluí-lo no JSON.`;
 
       return template
         .replaceAll("{TEMA}", tema)

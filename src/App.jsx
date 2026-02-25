@@ -1,9 +1,10 @@
 import React from 'react';
-import AiTest from './components/AITest';
+import FluxoTest from './tests/FluxoTest';
+import { AITest } from './tests/AiTest';
 
 const App = () => {
   return (
-    <AiTest />
+    <FluxoTest />
   );
 };
 
