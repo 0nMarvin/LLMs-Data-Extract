@@ -1,1 +1,17 @@
 @import 'tailwindcss';
+
+@theme {
+  /* Aqui você define o nome da variável que o Tailwind vai ler */
+  /* Ao usar --color-brand-*, o Tailwind cria as classes bg-brand-*, text-brand-*, etc. */
+
+  --color-brand-50: #fffbeb; /* O bege clarinho do fundo do card */
+  --color-brand-100: #fef3c7;
+  --color-brand-200: #fde68a; /* Cor das bordas dos inputs na sua imagem */
+  --color-brand-400: #fbbf24;
+  --color-brand-500: #f59e0b; /* O amarelo/laranja principal */
+  --color-brand-600: #d97706;
+  --color-brand-900: #78350f; /* O marrom do botão "GERAR LISTA" */
+
+  /* Variável extra para o fundo da página amarela */
+  --color-retro-bg: #fdf2b3;
+}

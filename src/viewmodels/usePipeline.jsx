@@ -11,7 +11,7 @@ const extractContent = (json) => {
 
 export const usePipeline = () => {
   const { loading, error, request } = useFetch();
-  const { activeModel } = useAiModels();
+  const { activeModel, models, selectedModelId, setSelectedModelId } = useAiModels();
   const {
     setTema,
     modelarResposta,
@@ -25,23 +25,23 @@ export const usePipeline = () => {
   const [pipelineStep, setPipelineStep] = useState(null);
 
   // ─── Primitiva: executa uma etapa do pipeline ──────────────────────────────
-      const rodarEtapa = useCallback(
-        async (promptFlow, userMessage) => {
-          if (!activeModel?.url) {
-            throw new Error("Configuração de modelo incompleta: URL ausente."); //
-          }
+  const rodarEtapa = useCallback(
+    async (promptFlow, userMessage) => {
+      if (!activeModel?.url) {
+        throw new Error("Configuração de modelo incompleta: URL ausente.");
+      }
 
-          const { json, response } = await request(activeModel.url, { // Agora activeModel.url existe!
-            method: "POST",
-            headers: activeModel.headers,
-            body: JSON.stringify({
-              model: activeModel.id,
-              messages: [
-                { role: "system", content: promptFlow.system },
-                { role: "user", content: userMessage },
-              ],
-            }),
-          });
+      const { json, response } = await request(activeModel.url, {
+        method: "POST",
+        headers: activeModel.headers,
+        body: JSON.stringify({
+          model: activeModel.id,
+          messages: [
+            { role: "system", content: promptFlow.system },
+            { role: "user", content: userMessage },
+          ],
+        }),
+      });
 
       if (!response?.ok || !json) {
         throw new Error(`Falha na etapa. Status: ${response?.status ?? "sem resposta"}`);
@@ -180,21 +180,24 @@ export const usePipeline = () => {
 
   return {
     // Ações do pipeline
-    iniciarModelar,        // Etapa 1: chame → aguarde curadoria humana
-    iniciarProcessar,      // Etapa 2: chame após o usuário editar atributos/filtros
-    iniciarValidar,        // Etapa 3: chame após processar
-    executarFluxoCompleto, // Atalho sem pausa para curadoria
+    iniciarModelar,
+    iniciarProcessar,
+    iniciarValidar,
+    executarFluxoCompleto,
 
-    // Curadoria humana — edita generationData diretamente entre etapa 1 e 2
-    // editarAtributos(string[]) → boolean
-    // editarFiltros(string[]) → boolean
+    // Curadoria humana
     editarAtributos,
     editarFiltros,
 
+    // Seleção de modelo
+    models,
+    selectedModelId,
+    setSelectedModelId,
+
     // Estado exposto ao front-end
-    loading,                       // true enquanto há requisição HTTP em curso
-    pipelineStep,                  // "atributos" | "filtros" | "geracao" | "validacao" | null
-    error: pipelineError || error, // string: primeiro erro encontrado (pipeline ou HTTP)
-    generationData,                // { tema, atributos, filtros, finalList }
+    loading,
+    pipelineStep,
+    error: pipelineError || error,
+    generationData,
   };
 };
