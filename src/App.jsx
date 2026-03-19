@@ -58,7 +58,7 @@ const App = () => {
     pipelineStep,
     error,
     generationData,
-  } = usePipeline();
+  } = usePipeline(activeModel);
 
   const [step,        setStep]        = useState(1);
   const [modalTemaAberto, setModalTemaAberto] = useState(true);

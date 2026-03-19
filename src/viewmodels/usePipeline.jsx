@@ -1,13 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import useFetch from "./useFetch";
-import { useAiModels } from "./useAiModels";
 import { useListParser } from "./useListParser";
 import { PROMPT_FLOWS } from "../config/prompts";
 import { parseAIResponse, formatarParaSnakeCase, gerarIdDeterministico } from "../helpers/listUtils";
 
 const extractContent = (json) => json?.choices?.[0]?.message?.content ?? null;
 
-// Formata lista para exibição — espelha returnList do useListParser
 function formatarLista(listaJson) {
   if (!listaJson?.length) return "Nenhum item gerado ainda.";
   const texto = listaJson.map((item, index) => {
@@ -22,12 +20,11 @@ function formatarLista(listaJson) {
   return `Aqui está o resultado da sua modelagem:\n\n${texto}`;
 }
 
-// Processa array bruto em lista formatada com IDs determinísticos
 function processarArray(bruto, tema) {
   return bruto.map((item, index) => {
     const higienizado = {};
     Object.keys(item).forEach((chaveOriginal) => {
-      const valor     = item[chaveOriginal];
+      const valor      = item[chaveOriginal];
       const chaveLimpa = formatarParaSnakeCase(chaveOriginal);
       if (chaveLimpa !== "id" && valor !== null && valor !== undefined && valor !== "") {
         higienizado[chaveLimpa] = valor;
@@ -37,9 +34,12 @@ function processarArray(bruto, tema) {
   });
 }
 
-export const usePipeline = () => {
+/**
+ * usePipeline
+ * @param {{ id, url, headers }} activeModel — recebido do App (fonte única de verdade)
+ */
+export const usePipeline = (activeModel) => {
   const { loading, error, request } = useFetch();
-  const { activeModel, models, selectedModelId, setSelectedModelId } = useAiModels();
   const {
     setTema,
     modelarResposta,
@@ -51,22 +51,26 @@ export const usePipeline = () => {
     generationData,
   } = useListParser();
 
-  // Ref sempre atualizado — para leitura síncrona de tema/atributos/filtros
   const generationDataRef = useRef(generationData);
   useEffect(() => { generationDataRef.current = generationData; }, [generationData]);
+
+  // Ref para activeModel — evita stale closure sem re-criar rodarEtapa a cada render
+  const activeModelRef = useRef(activeModel);
+  useEffect(() => { activeModelRef.current = activeModel; }, [activeModel]);
 
   const [pipelineError, setPipelineError] = useState(null);
   const [pipelineStep,  setPipelineStep]  = useState(null);
 
   // ─── Primitiva ────────────────────────────────────────────────────────────
   const rodarEtapa = useCallback(async (promptFlow, userMessage) => {
-    if (!activeModel?.url) throw new Error("Configuração de modelo incompleta: URL ausente.");
+    const model = activeModelRef.current;
+    if (!model?.url) throw new Error("Configuração de modelo incompleta: URL ausente.");
 
-    const { json, response } = await request(activeModel.url, {
+    const { json, response } = await request(model.url, {
       method:  "POST",
-      headers: activeModel.headers,
+      headers: model.headers,
       body:    JSON.stringify({
-        model:    activeModel.id,
+        model:    model.id,
         messages: [
           { role: "system", content: promptFlow.system },
           { role: "user",   content: userMessage },
@@ -80,26 +84,28 @@ export const usePipeline = () => {
     const content = extractContent(json);
     if (!content) throw new Error("Resposta da API veio vazia ou em formato inesperado.");
     return content;
-  }, [activeModel, request]);
+  }, [request]); // activeModel lido via ref — não precisa de dep
 
-  // ─── 1. Modelar ───────────────────────────────────────────────────────────
+  // ─── 1. Modelar — atributos e filtros em paralelo ─────────────────────────
   const iniciarModelar = useCallback(async (temaInput) => {
     setPipelineError(null);
     try {
       setTema(temaInput);
+      setPipelineStep("modelagem");
 
-      setPipelineStep("atributos");
-      const resAtributos = await rodarEtapa(PROMPT_FLOWS.MODELAGEM_ATRIBUTOS, temaInput);
+      // Dispara as duas requisições ao mesmo tempo
+      const [resAtributos, resFiltros] = await Promise.all([
+        rodarEtapa(PROMPT_FLOWS.MODELAGEM_ATRIBUTOS, temaInput),
+        rodarEtapa(PROMPT_FLOWS.MODELAGEM_FILTRO,    temaInput),
+      ]);
+
       const atributosParsed = parseAIResponse(resAtributos);
-      modelarResposta(resAtributos, "atributos");
+      const filtrosParsed   = parseAIResponse(resFiltros);
 
-      setPipelineStep("filtros");
-      const resFiltros = await rodarEtapa(PROMPT_FLOWS.MODELAGEM_FILTRO, temaInput);
-      const filtrosParsed = parseAIResponse(resFiltros);
-      modelarResposta(resFiltros, "filtros");
+      modelarResposta(resAtributos, "atributos");
+      modelarResposta(resFiltros,   "filtros");
 
       setPipelineStep(null);
-      // Retorna os valores diretamente — sem depender do estado React
       return {
         atributos: Array.isArray(atributosParsed) ? atributosParsed.map(String) : [],
         filtros:   Array.isArray(filtrosParsed)   ? filtrosParsed.map(String)   : [],
@@ -112,7 +118,7 @@ export const usePipeline = () => {
     }
   }, [rodarEtapa, setTema, modelarResposta]);
 
-  // ─── 2. Processar — retorna { json, list } diretamente ───────────────────
+  // ─── 2. Processar ─────────────────────────────────────────────────────────
   const iniciarProcessar = useCallback(async (quantidade = 10) => {
     setPipelineError(null);
 
@@ -141,11 +147,9 @@ export const usePipeline = () => {
         list: formatarLista(listaFormatada),
       };
 
-      // Persiste no estado para UI
       dadoResposta(resGeracao);
-
       setPipelineStep(null);
-      return finalList; // retorna diretamente para o caller
+      return finalList;
     } catch (err) {
       setPipelineError(`Erro ao processar dados: ${err.message}`);
       setPipelineStep(null);
@@ -154,7 +158,7 @@ export const usePipeline = () => {
     }
   }, [rodarEtapa, dadoResposta]);
 
-  // ─── 3. Validar — recebe finalList como param, retorna finalList validado ─
+  // ─── 3. Validar — opcional, usa finalList como fallback em caso de falha ──
   const iniciarValidar = useCallback(async (finalListParam) => {
     setPipelineError(null);
 
@@ -174,20 +178,12 @@ export const usePipeline = () => {
       );
 
       const resValidacao = await rodarEtapa(PROMPT_FLOWS.DADOS_FILTROS, userMessage);
-      console.log("[iniciarValidar] resposta bruta:", resValidacao?.slice(0, 300));
 
       const brutoValidado = parseAIResponse(resValidacao);
 
-      // Array vazio = modelo filtrou tudo → usa lista gerada sem filtro
-      if (Array.isArray(brutoValidado) && brutoValidado.length === 0) {
-        console.warn("[iniciarValidar] Validação retornou array vazio — usando lista gerada diretamente.");
-        setPipelineStep(null);
-        return finalList;
-      }
-
-      // Parse falhou ou retornou null → usa lista gerada como fallback
-      if (!brutoValidado || !Array.isArray(brutoValidado)) {
-        console.warn("[iniciarValidar] Parse falhou — usando lista gerada diretamente. Raw:", resValidacao?.slice(0, 500));
+      // Qualquer falha no parse → usa lista gerada diretamente (sem travar)
+      if (!brutoValidado || !Array.isArray(brutoValidado) || brutoValidado.length === 0) {
+        console.warn("[iniciarValidar] Fallback para lista gerada.", resValidacao?.slice(0, 200));
         setPipelineStep(null);
         return finalList;
       }
@@ -198,42 +194,24 @@ export const usePipeline = () => {
         list: formatarLista(listaValidada),
       };
 
-      // Persiste no estado para UI
       dadoResposta(resValidacao);
-
       setPipelineStep(null);
       return finalListValidado;
     } catch (err) {
-      // Erro inesperado → usa lista gerada como fallback em vez de falhar
-      console.error("[iniciarValidar] Erro inesperado, usando fallback:", err);
+      console.error("[iniciarValidar] Fallback:", err);
       setPipelineStep(null);
-      return finalList;
+      return finalList; // nunca bloqueia
     }
   }, [rodarEtapa, dadoResposta]);
-
-  // ─── Fluxo completo ───────────────────────────────────────────────────────
-  const executarFluxoCompleto = useCallback(async (temaInput, quantidade = 10) => {
-    const modelouOk = await iniciarModelar(temaInput);
-    if (!modelouOk) return;
-
-    const finalList = await iniciarProcessar(quantidade);
-    if (!finalList) return;
-
-    await iniciarValidar(finalList);
-  }, [iniciarModelar, iniciarProcessar, iniciarValidar]);
 
   return {
     iniciarModelar,
     iniciarProcessar,
     iniciarValidar,
-    executarFluxoCompleto,
     editarAtributos,
     editarFiltros,
     resetar,
     carregarLista,
-    models,
-    selectedModelId,
-    setSelectedModelId,
     loading,
     pipelineStep,
     error:         pipelineError || error,

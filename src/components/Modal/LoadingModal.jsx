@@ -4,6 +4,7 @@ import { MODAL_THEME as T } from './modalTheme';
 const BRAND_CHARS = ['u', 'l', 'I', 'A', '.', '.', '.'];
 
 const STATUS_BY_STEP = {
+  modelagem: 'gerando atributos e filtros...',
   atributos: 'gerando atributos...',
   filtros:   'gerando filtros...',
   geracao:   'processando dados...',
