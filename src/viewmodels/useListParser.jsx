@@ -15,7 +15,6 @@ export function useListParser() {
     setGenerationData((prev) => ({ ...prev, tema }));
   }
 
-  /** Curadoria humana: atualiza atributos com validação Zod. Retorna boolean. */
   function setAtributos(novosAtributos) {
     const validacao = listGeneratorSchema.shape.atributos.safeParse(novosAtributos);
     if (validacao.success) {
@@ -25,7 +24,6 @@ export function useListParser() {
     return false;
   }
 
-  /** Curadoria humana: atualiza filtros com validação Zod. Retorna boolean. */
   function setFiltros(novosFiltros) {
     const validacao = listGeneratorSchema.shape.filtros.safeParse(novosFiltros);
     if (validacao.success) {
@@ -35,9 +33,30 @@ export function useListParser() {
     return false;
   }
 
+  /**
+   * Reseta o estado para o inicial.
+   * Chamado ao iniciar uma nova lista do zero.
+   */
+  function resetar() {
+    setGenerationData(initialGenerationState);
+  }
+
+  /**
+   * Carrega uma lista salva completa no estado do pipeline de uma só vez.
+   * Evita inconsistências ao trocar entre listas salvas.
+   * @param {{ tema, atributos, filtros, finalList }} lista
+   */
+  function carregarLista(lista) {
+    setGenerationData({
+      tema:      lista.tema      ?? "",
+      atributos: lista.atributos ?? null,
+      filtros:   lista.filtros   ?? null,
+      finalList: lista.finalList ?? null,
+    });
+  }
+
   // ─── Parsers de resposta da API ───────────────────────────────────────────
 
-  /** Recebe resposta bruta da API e popula atributos ou filtros. */
   function modelarResposta(response, etapa) {
     try {
       const arrayBruto = parseAIResponse(response);
@@ -61,7 +80,6 @@ export function useListParser() {
     }
   }
 
-  /** Formata a lista final para exibição em texto. */
   function returnList(listaJson) {
     if (!listaJson || listaJson.length === 0) return "Nenhum item gerado ainda.";
 
@@ -84,10 +102,6 @@ export function useListParser() {
     return `Aqui está o resultado da sua modelagem:\n\n${textoFormatado}`;
   }
 
-  /**
-   * Recebe resposta bruta da API, higieniza e salva em finalList.
-   * Retorna true se bem-sucedido, false se inválido.
-   */
   function dadoResposta(response) {
     const listaBruta = parseAIResponse(response);
     if (!listaBruta || !Array.isArray(listaBruta)) return false;
@@ -133,6 +147,8 @@ export function useListParser() {
     setTema,
     setAtributos,
     setFiltros,
+    resetar,
+    carregarLista,
     modelarResposta,
     dadoResposta,
   };

@@ -1,17 +1,17 @@
 import React from 'react';
-import { useAiModels } from '../viewmodels/useAiModels';
 
-const Header = () => {
-  const { models, selectedModelId, setSelectedModelId, activeModel } = useAiModels();
-
+/**
+ * Header
+ * Recebe o estado do modelo como props vindas do App,
+ * garantindo sincronização com o StepTheme e qualquer outro consumer.
+ */
+const Header = ({ models, selectedModelId, setSelectedModelId, activeModel }) => {
   return (
     <header className="flex justify-center items-center px-6 py-4 bg-brand-50 shadow-md">
 
       <div className="relative flex items-center">
 
-        <div
-          className="absolute left-2 z-10 w-9 h-9 rounded-full overflow-hidden border-2 border-brand-50 flex items-center justify-center wh shrink-0"
-        >
+        <div className="absolute left-2 z-10 w-9 h-9 rounded-full overflow-hidden border-2 border-brand-50 flex items-center justify-center shrink-0">
           {activeModel?.img ? (
             <img
               src={activeModel.img}
@@ -26,11 +26,11 @@ const Header = () => {
         <select
           value={selectedModelId}
           onChange={(e) => setSelectedModelId(e.target.value)}
-          className="bg-brand-900 h-12 w-80 rounded-full text-brand-50 text-center text-base 
-                     appearance-none border-none pl-14 pr-12 cursor-pointer 
+          className="bg-brand-900 h-12 w-80 rounded-full text-brand-50 text-center text-base
+                     appearance-none border-none pl-14 pr-12 cursor-pointer
                      hover:bg-brand-800 transition-colors shadow-inner"
         >
-          {models.map(m => (
+          {models.map((m) => (
             <option key={m.id} value={m.id} className="bg-white text-black text-left">
               {m.name}
             </option>
