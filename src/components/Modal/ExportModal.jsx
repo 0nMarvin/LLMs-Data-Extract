@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import BaseModal from './BaseModal';
 import { MODAL_THEME as T } from './modalTheme';
-import { useExport } from '../../viewmodels/useExport';
+import { useExport } from '../../hooks/useExport';
 
 const FORMATOS = [
   { id: 'csv',  label: 'CSV',   icon: '📊', desc: 'Separado por vírgulas',   clipboardOk: true  },

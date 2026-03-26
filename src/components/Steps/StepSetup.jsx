@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import SectionCard from '../Forms/SectionCard';
 import BadgeCount from '../Forms/BadgeCount';
 import QuantitySelector from '../Forms/QuantitySelector';
@@ -6,17 +6,6 @@ import Button from '../Button';
 
 const LIMIT = 10;
 
-/**
- * StepSetup
- *
- * Além das props anteriores, agora recebe:
- * @param {string[]}  atributos          - Atributos gerados pelo pipeline (pode ser null enquanto carrega)
- * @param {string[]}  filtros            - Filtros gerados pelo pipeline (pode ser null enquanto carrega)
- * @param {Function}  onEditarAtributos  - Callback para persistir edições nos atributos
- * @param {Function}  onEditarFiltros    - Callback para persistir edições nos filtros
- * @param {number}    qtdObjetos         - Quantidade controlada pelo App (preservada no loop)
- * @param {Function}  onChangeQtd        - Atualiza quantidade no App
- */
 const StepSetup = ({
   tema,
   escopo,
@@ -29,9 +18,11 @@ const StepSetup = ({
   onNext,
   qtdObjetos,
   onChangeQtd,
+  // NOVO: Props para o controle de filtros[cite: 6]
+  validacaoAtiva,
+  setValidacaoAtiva
 }) => {
 
-  // ─── Curadoria local: mantém listas editáveis sincronizadas com o pipeline ─
   const handleRemoveAtributo = (index) => {
     const nova = atributos.filter((_, i) => i !== index);
     onEditarAtributos(nova);
@@ -58,7 +49,6 @@ const StepSetup = ({
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
-
       {/* Cabeçalho */}
       <div>
         <h1 className="text-5xl font-black uppercase font-mono text-amber-950">Nova Lista</h1>
@@ -73,29 +63,18 @@ const StepSetup = ({
           <span className="text-2xl font-sans font-bold text-amber-700">Tema Principal</span>
           <span className="text-amber-700 font-bold">|</span>
           <span className="text-xl font-sans text-amber-700 italic">sobre o que está procurando?</span>
-          <button
-            onClick={onBack}
-            className="ml-auto text-base font-bold uppercase tracking-widest hover:opacity-60 text-amber-800 font-mono"
-          >
+          <button onClick={onBack} className="ml-auto text-base font-bold uppercase tracking-widest hover:opacity-60 text-amber-800 font-mono">
             [ editar ]
           </button>
         </div>
-        <div
-          className="px-4 py-3 rounded-lg text-base font-medium"
-          style={{ background: '#FFF8C0', border: '1.5px solid #C8A76A', color: '#2A1005' }}
-        >
+        <div className="px-4 py-3 rounded-lg text-base font-medium" style={{ background: '#FFF8C0', border: '1.5px solid #C8A76A', color: '#2A1005' }}>
           {tema}
         </div>
       </div>
 
-      {/* ─── Curadoria: Atributos + Filtros (aparece após modelagem) ─────────── */}
+      {/* Atributos + Filtros */}
       {(atributos || filtros) && (
-        <div
-          className="flex flex-col gap-6 pt-6 animate-in fade-in slide-in-from-bottom-2 duration-400"
-          style={{ borderTop: '1px solid rgba(42,16,5,0.1)' }}
-        >
-
-          {/* Atributos */}
+        <div className="flex flex-col gap-6 pt-6 animate-in fade-in slide-in-from-bottom-2 duration-400" style={{ borderTop: '1px solid rgba(42,16,5,0.1)' }}>
           {atributos && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
@@ -104,15 +83,10 @@ const StepSetup = ({
                 <span className="text-amber-700 font-bold">|</span>
                 <span className="text-sm italic text-amber-700">campos de cada item</span>
               </div>
-              <SectionCard
-                items={atributos}
-                onRemoveItem={handleRemoveAtributo}
-                onAddItem={handleAddAtributo}
-              />
+              <SectionCard items={atributos} onRemoveItem={handleRemoveAtributo} onAddItem={handleAddAtributo} />
             </div>
           )}
 
-          {/* Filtros */}
           {filtros && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
@@ -121,35 +95,41 @@ const StepSetup = ({
                 <span className="text-amber-700 font-bold">|</span>
                 <span className="text-sm italic text-amber-700">critérios de qualidade</span>
               </div>
-              <SectionCard
-                items={filtros}
-                onRemoveItem={handleRemoveFiltro}
-                onAddItem={handleAddFiltro}
-              />
+              <SectionCard items={filtros} onRemoveItem={handleRemoveFiltro} onAddItem={handleAddFiltro} />
             </div>
           )}
-          <div>
-            <p className="text-xs font-black font-mono uppercase tracking-widest mb-1" style={{ color: 'rgba(42,16,5,0.35)' }}>
-              curadoria — revise antes de gerar
-            </p>
-            <p className="text-xs italic" style={{ color: '#C8A76A' }}>
-              A IA sugeriu esses atributos e filtros. Edite à vontade.
-            </p>
-          </div>
         </div>
       )}
 
-      {/* Quantidade + Botão */}
-      <div
-        className="flex items-end justify-between gap-6 pt-6"
-        style={{ borderTop: '1px solid rgba(42,16,5,0.1)' }}
-      >
+      {/* NOVO: Botão de Ativação/Desativação de Filtros[cite: 6] */}
+      <div className="flex items-center justify-between p-4 rounded-xl" 
+           style={{ background: 'rgba(200, 167, 106, 0.1)', border: '1px dashed #C8A76A' }}>
+        <div className="flex flex-col">
+          <span className="text-sm font-black font-mono uppercase" style={{ color: '#7B3A10' }}>
+            Refinar com IA?
+          </span>
+          <span className="text-[10px] italic" style={{ color: '#2A1005' }}>
+            {validacaoAtiva 
+              ? "A IA removerá itens que não seguem os filtros acima." 
+              : "A lista será gerada sem validação adicional (mais rápido)."}
+          </span>
+        </div>
+        <button
+          onClick={() => setValidacaoAtiva(!validacaoAtiva)}
+          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200"
+          style={{ background: validacaoAtiva ? '#7B3A10' : '#E8D5A3' }}
+        >
+          <span className={`${validacaoAtiva ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition duration-200`} />
+        </button>
+      </div>
+
+      <div className="flex items-end justify-between gap-6 pt-6" style={{ borderTop: '1px solid rgba(42,16,5,0.1)' }}>
         <QuantitySelector
           label="Quantidade"
           subtitle="quantos itens?"
-          min={1}
-          max={10}
-          step={1}
+          min={5}
+          max={100}
+          step={5}
           value={qtdObjetos}
           onChange={onChangeQtd}
         />
@@ -162,8 +142,6 @@ const StepSetup = ({
           Gerar Lista
         </button>
       </div>
-
-      {/* Âncora para scroll do StepExtraction */}
       <div id="extraction-anchor" />
     </div>
   );

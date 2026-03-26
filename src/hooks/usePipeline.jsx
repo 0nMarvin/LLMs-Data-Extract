@@ -2,41 +2,15 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import useFetch from "./useFetch";
 import { useListParser } from "./useListParser";
 import { PROMPT_FLOWS } from "../config/prompts";
-import { parseAIResponse, formatarParaSnakeCase, gerarIdDeterministico } from "../helpers/listUtils";
 
 const extractContent = (json) => json?.choices?.[0]?.message?.content ?? null;
-
-function formatarLista(listaJson) {
-  if (!listaJson?.length) return "Nenhum item gerado ainda.";
-  const texto = listaJson.map((item, index) => {
-    const chaves   = Object.keys(item);
-    const detalhes = chaves
-      .map((k) => (k.toLowerCase() === "id" ? null : `   - ${k}: ${item[k]}`))
-      .filter(Boolean)
-      .join("\n");
-    const titulo = item[chaves[1]] || `Item ${index + 1}`;
-    return `${index + 1}. 📌 ${titulo.toUpperCase()}\n${detalhes}`;
-  }).join("\n\n");
-  return `Aqui está o resultado da sua modelagem:\n\n${texto}`;
-}
-
-function processarArray(bruto, tema) {
-  return bruto.map((item, index) => {
-    const higienizado = {};
-    Object.keys(item).forEach((chaveOriginal) => {
-      const valor      = item[chaveOriginal];
-      const chaveLimpa = formatarParaSnakeCase(chaveOriginal);
-      if (chaveLimpa !== "id" && valor !== null && valor !== undefined && valor !== "") {
-        higienizado[chaveLimpa] = valor;
-      }
-    });
-    return { id: gerarIdDeterministico(tema, index), ...higienizado };
-  });
-}
 
 /**
  * usePipeline
  * @param {{ id, url, headers }} activeModel — recebido do App (fonte única de verdade)
+ *
+ * Não importa listUtils diretamente — usa as funções utilitárias
+ * expostas pelo useListParser para manter a responsabilidade centralizada.
  */
 export const usePipeline = (activeModel) => {
   const { loading, error, request } = useFetch();
@@ -48,13 +22,15 @@ export const usePipeline = (activeModel) => {
     setFiltros:   editarFiltros,
     resetar,
     carregarLista,
+    parsear,
+    processarArray,
+    formatarLista,
     generationData,
   } = useListParser();
 
   const generationDataRef = useRef(generationData);
   useEffect(() => { generationDataRef.current = generationData; }, [generationData]);
 
-  // Ref para activeModel — evita stale closure sem re-criar rodarEtapa a cada render
   const activeModelRef = useRef(activeModel);
   useEffect(() => { activeModelRef.current = activeModel; }, [activeModel]);
 
@@ -84,7 +60,7 @@ export const usePipeline = (activeModel) => {
     const content = extractContent(json);
     if (!content) throw new Error("Resposta da API veio vazia ou em formato inesperado.");
     return content;
-  }, [request]); // activeModel lido via ref — não precisa de dep
+  }, [request]);
 
   // ─── 1. Modelar — atributos e filtros em paralelo ─────────────────────────
   const iniciarModelar = useCallback(async (temaInput) => {
@@ -93,14 +69,13 @@ export const usePipeline = (activeModel) => {
       setTema(temaInput);
       setPipelineStep("modelagem");
 
-      // Dispara as duas requisições ao mesmo tempo
       const [resAtributos, resFiltros] = await Promise.all([
         rodarEtapa(PROMPT_FLOWS.MODELAGEM_ATRIBUTOS, temaInput),
         rodarEtapa(PROMPT_FLOWS.MODELAGEM_FILTRO,    temaInput),
       ]);
 
-      const atributosParsed = parseAIResponse(resAtributos);
-      const filtrosParsed   = parseAIResponse(resFiltros);
+      const atributosParsed = parsear(resAtributos);
+      const filtrosParsed   = parsear(resFiltros);
 
       modelarResposta(resAtributos, "atributos");
       modelarResposta(resFiltros,   "filtros");
@@ -116,10 +91,10 @@ export const usePipeline = (activeModel) => {
       console.error("[iniciarModelar]", err);
       return null;
     }
-  }, [rodarEtapa, setTema, modelarResposta]);
+  }, [rodarEtapa, setTema, modelarResposta, parsear]);
 
-  // ─── 2. Processar ─────────────────────────────────────────────────────────
-  const iniciarProcessar = useCallback(async (quantidade = 10) => {
+// ─── 2. Processar (Versão Robustecida com Lotes e Anti-Repetição) ───────────
+  const iniciarProcessar = useCallback(async (quantidadeTotal = 10) => {
     setPipelineError(null);
 
     const { tema, atributos, filtros } = generationDataRef.current;
@@ -130,24 +105,51 @@ export const usePipeline = (activeModel) => {
 
     try {
       setPipelineStep("geracao");
+      
+      const TAMANHO_LOTE = 20; // Tamanho ideal para evitar "preguiça" da IA
+      const numLotes = Math.ceil(quantidadeTotal / TAMANHO_LOTE);
+      let listaAcumuladaRaw = [];
+      let nomesJaGerados = []; // Para evitar repetição baseada no nome/ID
 
-      const userMessage = PROMPT_FLOWS.DADOS_GERACAO.format(
-        tema, atributos.join(", "), filtros.join(", "), quantidade
-      );
+      for (let i = 0; i < numLotes; i++) {
+        const qtdDesteLote = Math.min(TAMANHO_LOTE, quantidadeTotal - listaAcumuladaRaw.length);
+        if (qtdDesteLote <= 0) break;
 
-      const resGeracao = await rodarEtapa(PROMPT_FLOWS.DADOS_GERACAO, userMessage);
+        // Criamos uma instrução extra de exclusão para o lote atual
+        const instrucaoAntiRepeticao = nomesJaGerados.length > 0 
+          ? `\nPROIBIDO GERAR OS SEGUINTES ITENS (JÁ EXISTENTES): ${nomesJaGerados.join(", ")}.`
+          : "";
 
-      const bruto = parseAIResponse(resGeracao);
-      if (!bruto || !Array.isArray(bruto) || bruto.length === 0)
+        const userMessage = PROMPT_FLOWS.DADOS_GERACAO.format(
+          tema, 
+          atributos.join(", "), 
+          filtros.join(", "), 
+          qtdDesteLote
+        ) + instrucaoAntiRepeticao;
+
+        const resGeracao = await rodarEtapa(PROMPT_FLOWS.DADOS_GERACAO, userMessage);
+        const bruto = parsear(resGeracao);
+
+        if (bruto && Array.isArray(bruto)) {
+          // Adicionamos os novos itens e atualizamos a lista de nomes proibidos
+          listaAcumuladaRaw = [...listaAcumuladaRaw, ...bruto];
+          
+          // Mapeamos a primeira coluna (geralmente Nome ou ID) para evitar duplicatas no próximo lote
+          const novosNomes = bruto.map(item => Object.values(item)[0]); 
+          nomesJaGerados = [...nomesJaGerados, ...novosNomes];
+        }
+      }
+
+      if (listaAcumuladaRaw.length === 0)
         throw new Error("O parser não conseguiu interpretar os dados gerados.");
 
-      const listaFormatada = processarArray(bruto, tema);
+      const listaFormatada = processarArray(listaAcumuladaRaw, tema);
       const finalList = {
         json: JSON.stringify(listaFormatada),
         list: formatarLista(listaFormatada),
       };
 
-      dadoResposta(resGeracao);
+      dadoResposta(JSON.stringify(listaAcumuladaRaw)); // Salva o histórico bruto consolidado
       setPipelineStep(null);
       return finalList;
     } catch (err) {
@@ -156,9 +158,9 @@ export const usePipeline = (activeModel) => {
       console.error("[iniciarProcessar]", err);
       return null;
     }
-  }, [rodarEtapa, dadoResposta]);
+  }, [rodarEtapa, parsear, processarArray, formatarLista, dadoResposta]);
 
-  // ─── 3. Validar — opcional, usa finalList como fallback em caso de falha ──
+// ─── 3. Validar (Versão Robustecida para Grandes Volumes) ──────────────────
   const iniciarValidar = useCallback(async (finalListParam) => {
     setPipelineError(null);
 
@@ -173,36 +175,52 @@ export const usePipeline = (activeModel) => {
     try {
       setPipelineStep("validacao");
 
-      const userMessage = PROMPT_FLOWS.DADOS_FILTROS.format(
-        finalList.json, tema, filtros?.join(", ") ?? ""
-      );
+      // 1. Converte o JSON gigante em um array real para fatiar
+      const dadosCompletos = JSON.parse(finalList.json);
+      const TAMANHO_LOTE_VALIDACAO = 20; // Fatia para não sobrecarregar o analista (IA)
+      let dadosHigieneTotal = [];
 
-      const resValidacao = await rodarEtapa(PROMPT_FLOWS.DADOS_FILTROS, userMessage);
+      // 2. Loop de fatiamento
+      for (let i = 0; i < dadosCompletos.length; i += TAMANHO_LOTE_VALIDACAO) {
+        const fatia = dadosCompletos.slice(i, i + TAMANHO_LOTE_VALIDACAO);
+        const jsonFatia = JSON.stringify(fatia);
 
-      const brutoValidado = parseAIResponse(resValidacao);
+        const userMessage = PROMPT_FLOWS.DADOS_FILTROS.format(
+          jsonFatia, 
+          tema, 
+          filtros?.join(", ") ?? ""
+        );
 
-      // Qualquer falha no parse → usa lista gerada diretamente (sem travar)
-      if (!brutoValidado || !Array.isArray(brutoValidado) || brutoValidado.length === 0) {
-        console.warn("[iniciarValidar] Fallback para lista gerada.", resValidacao?.slice(0, 200));
-        setPipelineStep(null);
-        return finalList;
+        // Chamada para validar apenas esta fatia
+        const resValidacao = await rodarEtapa(PROMPT_FLOWS.DADOS_FILTROS, userMessage);
+        const brutoValidado = parsear(resValidacao);
+
+        if (brutoValidado && Array.isArray(brutoValidado)) {
+          dadosHigieneTotal = [...dadosHigieneTotal, ...brutoValidado];
+        } else {
+          // Se uma fatia falhar bizarramente, mantemos a original para não perder dados
+          console.warn(`[Lote ${i}] Falha na validação, mantendo dados originais da fatia.`);
+          dadosHigieneTotal = [...dadosHigieneTotal, ...fatia];
+        }
       }
 
-      const listaValidada = processarArray(brutoValidado, tema);
+      // 3. Reconstrói o objeto final com tudo o que passou no filtro
+      const listaValidada = processarArray(dadosHigieneTotal, tema);
       const finalListValidado = {
         json: JSON.stringify(listaValidada),
         list: formatarLista(listaValidada),
       };
 
-      dadoResposta(resValidacao);
+      dadoResposta(JSON.stringify(dadosHigieneTotal));
       setPipelineStep(null);
       return finalListValidado;
+
     } catch (err) {
-      console.error("[iniciarValidar] Fallback:", err);
+      console.error("[iniciarValidar] Erro crítico, usando fallback:", err);
       setPipelineStep(null);
-      return finalList; // nunca bloqueia
+      return finalList; // Em caso de erro catastrófico, retorna a lista sem validar
     }
-  }, [rodarEtapa, dadoResposta]);
+  }, [rodarEtapa, parsear, processarArray, formatarLista, dadoResposta]);
 
   return {
     iniciarModelar,

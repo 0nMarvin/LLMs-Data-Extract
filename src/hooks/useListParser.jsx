@@ -142,6 +142,50 @@ export function useListParser() {
     return true;
   }
 
+  /**
+   * Parseia resposta bruta da API para array.
+   * Exposto para evitar que consumidores importem listUtils diretamente.
+   */
+  function parsear(response) {
+    return parseAIResponse(response);
+  }
+
+  /**
+   * Processa array bruto em lista com IDs e campos higienizados.
+   * Exposto para que o usePipeline não precise conhecer listUtils.
+   */
+  function processarArray(bruto, tema) {
+    return bruto.map((item, index) => {
+      const higienizado = {};
+      Object.keys(item).forEach((chaveOriginal) => {
+        const valor      = item[chaveOriginal];
+        const chaveLimpa = formatarParaSnakeCase(chaveOriginal);
+        if (chaveLimpa !== "id" && valor !== null && valor !== undefined && valor !== "") {
+          higienizado[chaveLimpa] = valor;
+        }
+      });
+      return { id: gerarIdDeterministico(tema, index), ...higienizado };
+    });
+  }
+
+  /**
+   * Formata array de objetos para exibição em texto.
+   * Exposto para que o usePipeline não precise duplicar esta lógica.
+   */
+  function formatarLista(listaJson) {
+    if (!listaJson?.length) return "Nenhum item gerado ainda.";
+    const texto = listaJson.map((item, index) => {
+      const chaves   = Object.keys(item);
+      const detalhes = chaves
+        .map((k) => (k.toLowerCase() === "id" ? null : `   - ${k}: ${item[k]}`))
+        .filter(Boolean)
+        .join("\n");
+      const titulo = item[chaves[1]] || `Item ${index + 1}`;
+      return `${index + 1}. 📌 ${titulo.toUpperCase()}\n${detalhes}`;
+    }).join("\n\n");
+    return `Aqui está o resultado da sua modelagem:\n\n${texto}`;
+  }
+
   return {
     generationData,
     setTema,
@@ -151,5 +195,8 @@ export function useListParser() {
     carregarLista,
     modelarResposta,
     dadoResposta,
+    parsear,
+    processarArray,
+    formatarLista,
   };
 }
