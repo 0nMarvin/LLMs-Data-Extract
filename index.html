@@ -1,20 +1,555 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="LLMs Data Extract." />
-    <title>LLms</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&family=Space+Mono:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14121f">
+<title>Ultimate Werewolf · Vila</title>
+<style>
+:root{--bg:#14121f;--card:#1f1b30;--line:#332d4a;--tx:#efe6d2;--mut:#a79fbd;--acc:#e8a33d;--ok:#6fbf8b;--bad:#d9645a;--vil:#7aa7e0;
+--vampiro:#c0527a;--ind:#b58be0}
+@media(prefers-color-scheme:light){:root{--bg:#f4eddc;--card:#fffaf0;--line:#dccfae;--tx:#2a2219;--mut:#7a6d57;--acc:#a8650b;--ok:#2f7d4f;--bad:#b3392f;--vil:#2f6aa8}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 Georgia,'Times New Roman',serif;padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0 0 8px;font-weight:700;letter-spacing:.2px}
+.sum{display:flex;gap:10px;align-items:center}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:13px;color:var(--mut)}
+.pill b{color:var(--tx);font-size:17px}
+.meter{position:relative;height:10px;border-radius:6px;margin-top:10px;background:linear-gradient(90deg,var(--bad),var(--line) 50%,var(--vil))}
+.meter i{position:absolute;top:-4px;width:4px;height:18px;border-radius:2px;background:var(--tx);left:50%;transition:left .25s}
+.status{margin-top:6px;font-size:14px;display:flex;justify-content:space-between}
+.status b.equilibrada{color:var(--ok)}.status b.vila{color:var(--vil)}.status b.inimigos{color:var(--bad)}
+.avisos{margin:8px 0 0;padding:0;list-style:none;font-size:13px;color:var(--acc)}
+.avisos li{padding:2px 0}
+main{padding:12px 14px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:20px;padding:8px 14px;font:inherit;font-size:14px;min-height:40px}
+.chip[aria-pressed=true]{background:var(--bad);border-color:var(--bad);color:#fff;text-decoration:line-through}
+.hint{font-size:12px;color:var(--mut);margin:2px 0 10px}
+h2{font-size:15px;margin:18px 0 8px;color:var(--mut);font-weight:700}
+.role{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--vil);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.role.lobos{border-left-color:var(--bad)}.role.vampiros{border-left-color:var(--vampiro)}.role.indep{border-left-color:var(--ind)}
+.role.on{outline:2px solid var(--acc)}.role.off{opacity:.35}
+.role .t{flex:1;min-width:0}.role .n{font-weight:700}.role .d{font-size:12.5px;color:var(--mut)}
+.adj{font-size:12px;border-radius:8px;padding:1px 6px;margin-left:6px;background:var(--line);color:var(--tx)}
+.adj.p{color:var(--vil)}.adj.m{color:var(--bad)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--tx);font-size:22px;line-height:1}
+.step button:disabled{opacity:.3}.step span{min-width:20px;text-align:center;font-weight:700}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:16px 0;border:0;background:none;color:var(--mut);font:inherit;font-size:15px}
+nav button[aria-selected=true]{color:var(--acc);font-weight:700;box-shadow:inset 0 3px 0 var(--acc)}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:none;color:var(--mut);padding:10px;border-radius:9px;font:inherit}
+.seg button[aria-pressed=true]{background:var(--acc);color:#14121f;font-weight:700}
+.call{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.call.done{opacity:.4}
+.call .h{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.call .who{font-weight:700;font-size:17px}.call .w{font-size:12px;color:var(--acc)}
+.call q{display:block;margin:8px 0;font-style:italic;quotes:none}
+.call .a{font-size:14px;color:var(--mut)}
+.call label{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;min-height:36px}
+.call input{width:22px;height:22px;accent-color:var(--acc)}
+.warn{font-size:12px;color:var(--acc);margin-top:6px}
+.empty{color:var(--mut);text-align:center;padding:40px 10px}
+.small{font-size:13px;color:var(--mut)}
+.adj.dado{background:var(--acc);color:#14121f}
+.gen{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
+.gen .f{display:flex;gap:8px}.gen label{flex:1;font-size:12px;color:var(--mut)}
+.gen input{width:100%;margin-top:3px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:16px}
+.gen .go{width:100%;margin-top:10px;padding:14px;border:0;border-radius:12px;background:var(--acc);color:#14121f;font:inherit;font-weight:700;font-size:16px}
+.gen .go:disabled{opacity:.5}
+.info{border:1px solid var(--line);background:none;color:var(--acc);border-radius:50%;width:30px;height:30px;font-size:15px;flex:none;padding:0}
+dialog{width:min(92vw,520px);max-height:85vh;overflow:auto;background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:16px;padding:16px}
+dialog::backdrop{background:#000a}
+dialog h3{margin:0 0 4px;font-size:19px}dialog p{margin:8px 0}dialog ul{padding-left:18px;margin:6px 0}
+dialog .fechar{width:100%;margin-top:10px;padding:12px;border:0;border-radius:10px;background:var(--acc);color:#14121f;font:inherit;font-weight:700}
+.call details{margin-top:8px;font-size:13.5px}.call summary{color:var(--acc);min-height:32px;display:flex;align-items:center}
+.call details p{margin:6px 0;color:var(--tx)}
+.reset{background:none;border:1px solid var(--line);color:var(--mut);border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;margin-top:14px}
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+.perfil{width:100%;margin-top:3px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:16px}
+.row2{display:flex;gap:8px;margin-bottom:8px}
+.tag{font-size:11px;border-radius:8px;padding:1px 6px;margin-left:6px;background:var(--line);color:var(--mut)}
+.fix{border:1px solid var(--line);background:none;border-radius:50%;width:34px;height:34px;font-size:15px;padding:0;flex:none}
+details.g>summary{font-weight:700;color:var(--mut);padding:12px 0;list-style:none;display:flex;justify-content:space-between;min-height:44px}
+details.g>summary::after{content:"▾"}details.g[open]>summary::after{content:"▴"}
+.role.culto{border-left-color:var(--ind)}
+.btns{display:flex;gap:8px;margin-top:10px}.btns .reset{margin-top:0}
+.pl{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:6px}
+.pl.dead{opacity:.45}.pl label{flex:0 0 38%;font-size:13px;font-weight:700;line-height:1.2}
+.pl input,.dia input,.dia textarea{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:16px;width:100%}
+.pl button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:none;font-size:17px;padding:0;flex:none}
+.nav2{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.nav2 button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--tx);font-size:22px}
+.dia .c{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+.dia .c b{display:block;font-size:14px;margin-bottom:6px}
+.cfgrow{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.cfgrow .t{flex:1;font-size:14px;font-weight:700}.cfgrow .t small{display:block;font-weight:400;color:var(--mut);font-size:12px}
+.cfgrow input{width:84px;flex:none;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:16px;text-align:center}
+.nota{font-size:12px;color:var(--ind);margin-top:4px}
+.nbtn{border:1px solid var(--line);background:none;color:var(--tx);border-radius:50%;width:36px;height:36px;font-size:16px;padding:0;flex:none}
+.nbtn.tem{border-color:var(--acc);background:var(--acc)}
+.call.done.aberto{opacity:.9}
+.call .anota{margin-top:8px;display:grid;gap:8px}
+.call .anota label{display:block;margin:0;min-height:0;font-size:12.5px;color:var(--mut)}
+.call .anota input{width:100%;height:auto;margin-top:3px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:16px}
+.relbtn{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:var(--acc);color:#14121f;font:inherit;font-weight:700;font-size:16px}
+.rel h4{margin:14px 0 4px;font-size:14px;color:var(--mut)}.rel ul{padding-left:18px;margin:4px 0}.rel li{margin:5px 0;font-size:14px}
+.rel .l-bad{color:var(--bad)}.rel .l-warn{color:var(--acc)}.rel .l-info{color:var(--mut)}.rel .l-ok{color:var(--ok)}
+.rsum{display:grid;gap:8px;margin:10px 0}.rsum div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px}
+#placar{margin-top:8px}
+.pfim{display:none}body[data-tela=Narr] .pfim{display:block}
+#telaNarr{touch-action:pan-y pinch-zoom}
+body[data-tela=Narr] .sum,body[data-tela=Narr] .meter,body[data-tela=Narr] .status,body[data-tela=Narr] .avisos{display:none}
+.pcs{display:flex;gap:6px;flex-wrap:wrap}
+.pc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px 10px;font-size:13px;color:var(--mut)}
+.pc b{color:var(--tx);font-size:17px}
+.pc.lb{border-color:var(--bad)}.pc.vp{border-color:var(--vampiro)}.pc.ct{border-color:var(--ind)}.pc.vl{border-color:var(--vil)}
+.pc.zero{opacity:.55}.pc.zero b{text-decoration:line-through}
+.pfim{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--acc);color:#14121f;font-weight:700;font-size:14px}
+.call .acoes{display:flex;justify-content:space-between;align-items:center;margin-top:10px}.call .acoes label{margin-top:0}
+.elim{margin-left:auto;border:1px solid var(--line);background:none;color:var(--tx);border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;min-height:36px}
+.elim.parc{border-color:var(--bad);color:var(--bad)}
+.call .elims{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chipx{border:1px solid var(--line);background:var(--bg);color:var(--tx);border-radius:16px;padding:6px 12px;font:inherit;font-size:13px;min-height:34px}
+.chipx.on{border-color:var(--bad);text-decoration:line-through;opacity:.7}
+.call.dead{opacity:.5;padding:8px 12px}
+.call.dead q,.call.dead .a,.call.dead details,.call.dead .warn,.call.dead .anota,.call.dead .nbtn,.call.dead .acoes label,.call.dead .w{display:none}
+.call.dead .who{text-decoration:line-through;font-size:15px}
+.call.dead .acoes{margin-top:4px}
+
+.dh{flex:none;width:26px;text-align:center;color:var(--mut);font-size:20px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.pl label{flex:0 0 34%}.pl.arrasta{opacity:.5;outline:2px dashed var(--acc)}
+.zona{border-radius:12px;padding:2px;margin-bottom:6px}.zona.alvo{outline:2px dashed var(--acc);background:#e8a33d14}
+.zona .vazio{color:var(--mut);text-align:center;padding:16px;border:1px dashed var(--line);border-radius:12px;font-size:13px}
+.popn{font-size:26px!important;color:var(--acc);margin:0 0 6px}
+.efl{display:flex;align-items:center;gap:10px;margin-top:12px}.efl span{flex:0 0 42%;font-size:14px}
+.efl input{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:16px}
+.bts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.bts .elim{margin-left:0}
+.elim.on{border-color:var(--bad);color:var(--bad)}.call.dead [data-us]{display:none}
+</style>
+</head>
+<body data-tela="Vila">
+<header>
+  <h1>Ultimate Werewolf · Vila</h1>
+  <div class="sum">
+    <div class="pill"><b id="nJog">0</b> jogadores</div>
+    <div class="pill"><b id="nIni">0</b> inimigos</div>
+    <div class="pill">saldo <b id="saldo">0</b></div>
+  </div>
+  <div class="meter"><i id="mark"></i></div>
+  <div class="status"><b id="stTxt" class="equilibrada">Escolha os papéis</b><span class="small" id="esp"></span></div>
+  <ul class="avisos" id="avisos"></ul>
+  <div id="placar"></div>
+</header>
+
+<main id="telaVila">
+  <div class="gen">
+    <div class="f">
+      <label>Jogadores (6–68)<input id="gN" type="number" inputmode="numeric" min="6" max="68" value="12"></label>
+      <label>Aldeões (máx.)<input id="gMax" type="number" inputmode="numeric" min="0" max="15" value="15"></label>
+    </div>
+    <div class="f" style="margin-top:8px">
+      <label>Perfil do grupo<select class="perfil" id="gG"><option value="5">Não se conhecem (+5)</option><option value="0" selected>Misto (0)</option><option value="-5">Experiente (−5)</option></select></label>
+      <label>Saldo alvo<input id="gA" type="number" inputmode="numeric" value="0"></label>
+    </div>
+    <button class="go" id="sortear">🎲 Sortear vila</button>
+    <button class="reset" id="cfgBtn" style="width:100%;margin-top:8px">⚙ Configurações extras</button>
+    <div id="cfg" hidden></div>
+    <p class="hint" id="genMsg" style="color:var(--acc)"></p>
+    <p class="hint" style="margin:8px 0 0">Papéis fixados (📌) ficam; o sorteio completa o resto.</p>
+  </div>
+  <div class="seg" id="segV"><button data-v="cat" aria-pressed="true">Categoria</button><button data-v="time" aria-pressed="false">Time</button><button data-v="esp" aria-pressed="false">Só específicos</button></div>
+  <div id="vila"></div>
+  <div class="btns"><button class="reset" id="fixarTudo">📌 Fixar tudo</button><button class="reset" id="limpar">Limpar vila</button></div>
+</main>
+
+<main id="telaPapeis" hidden>
+  <h2 style="margin-top:4px">Remover grupos</h2>
+  <div class="chips" id="filtros"></div>
+  <p class="hint">Toque para tirar o grupo do jogo. Os papéis escolhidos aqui ficam fixos na vila.</p>
+  <div id="catalogo"></div>
+</main>
+
+<main id="telaNarr" hidden>
+  <div class="seg" id="segN">
+    <button data-k="roteiro" aria-pressed="true">Roteiro</button>
+    <button data-k="jogadores" aria-pressed="false">Jogadores</button>
+    <button data-k="diario" aria-pressed="false">Diário</button>
+  </div>
+  <div id="pRoteiro">
+    <div class="seg" id="seg">
+      <button data-k="primeira" aria-pressed="true">1ª noite</button>
+      <button data-k="seguintes" aria-pressed="false">Noites seguintes</button>
+    </div>
+    <div id="roteiro"></div>
+  </div>
+  <div id="pJog" hidden></div>
+  <div id="pDia" hidden></div>
+</main>
+
+<nav>
+  <button data-t="Vila" aria-selected="true">Vila</button>
+  <button data-t="Papeis" aria-selected="false">Papéis</button>
+  <button data-t="Narr" aria-selected="false">Narrador</button>
+</nav>
+<dialog id="dlg"></dialog>
+
+<script src="roles-data.js"></script>
+<script src="engine.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let GRUPOS=[],LIMITAVEIS=[],padr={};
+const GT={vila:'Time da vila',lobos:'Time dos lobos',vampiros:'Time dos vampiros',culto:'Time próprio (culto)'};
+const labelG=g=>(GRUPOS.find(x=>x[0]===g)||[0,g])[1];
+let visao='cat',ROLES=[],FILTROS=[],fixos={},gerados={},limites={},off=new Set(),dados=null,aba='primeira';
+const q=n=>(fixos[n]||0)+(gerados[n]||0);
+const total=()=>{const t={};for(const r of ROLES){const v=q(r.name);if(v)t[r.name]=v}return t};
+const salvar=()=>{try{localStorage.setItem('uw2',JSON.stringify({fixos,gerados,limites,off:[...off]}))}catch(e){}};
+const carregar=()=>{try{const s=JSON.parse(localStorage.getItem('uw2')||'{}');fixos=s.fixos||{};gerados=s.gerados||{};limites=s.limites||{};off=new Set(s.off||[])}catch(e){}};
+const bloqueado=r=>r.tags.some(t=>off.has(t));
+const sg=a=>a>0?'p':'m';
+
+async function init(){
+  const j=await UW.load();
+  ROLES=j.roles;FILTROS=j.filtros;LIMITAVEIS=j.limitaveis;GRUPOS=j.categorias.map(c=>[c.id,c.label]);carregar();
+  for(const k of Object.keys(fixos)) if(!ROLES.some(r=>r.name===k)) delete fixos[k];
+  for(const k of Object.keys(gerados)) if(!ROLES.some(r=>r.name===k)) delete gerados[k];
+  desenharFiltros();desenhar();atualizar();
+}
+function desenharFiltros(){
+  $('#filtros').innerHTML=FILTROS.map(f=>`<button class="chip" data-t="${f.tag}" aria-pressed="${off.has(f.tag)}">${f.label}</button>`).join('');
+}
+function nomeHTML(r){return r.pt&&r.pt!==r.name?`${r.pt} <small style="color:var(--mut);font-weight:400">${r.name}</small>`:r.name}
+function stepper(r){const v=q(r.name),b=bloqueado(r);
+  return `<div class="step"><button data-d="-1" ${v?'':'disabled'} aria-label="Menos">−</button><span>${v}</span><button data-d="1" ${b||v>=r.max?'disabled':''} aria-label="Mais">+</button></div>`}
+function linha(r,vila){
+  const g=gerados[r.name]||0,f=fixos[r.name]||0,b=bloqueado(r);
+  const tag=vila?`<span class="tag">${f?'📌 '+f:''}${f&&g?' · ':''}${g?'🎲 '+g:''}</span>`:'';
+  return `<div class="role ${r.time} ${!vila&&q(r.name)?'on':''} ${b?'off':''}" data-n="${r.name}">
+    <div class="t"><div class="n">${nomeHTML(r)}<span class="adj ${sg(r.adj)}">${r.adj>0?'+':''}${r.adj}</span>${tag}</div><div class="d">${r.acao}</div></div>
+    ${vila&&g?'<button class="fix" data-f="1" aria-label="Fixar" title="Fixar na vila">📌</button>':''}
+    <button class="info" data-i="1" aria-label="Detalhes">ⓘ</button>${stepper(r)}</div>`}
+function desenhar(){
+  // tela Vila: só os papéis que estão na vila
+  let h='';
+  if(visao==='esp'){
+    const rs=ROLES.filter(r=>r.name!=='Villager'&&q(r.name)),nv=q('Villager');
+    h=rs.map(r=>linha(r,true)).join('')+(nv?`<p class="small">+ ${nv} aldeão(ões) comum(ns), não listados aqui.</p>`:'');
+  }else if(visao==='time'){
+    for(const t of Object.keys(GT)){
+      const rs=ROLES.filter(r=>r.time===t&&q(r.name));
+      if(rs.length)h+=`<h2>${GT[t]} · ${rs.reduce((a,r)=>a+q(r.name),0)}</h2>`+rs.map(r=>linha(r,true)).join('');
+    }
+  }else for(const [g,rot] of GRUPOS){
+    const rs=ROLES.filter(r=>r.grupo===g&&q(r.name));
+    if(rs.length)h+=`<h2>${rot}</h2>`+rs.map(r=>linha(r,true)).join('');
+  }
+  $('#vila').innerHTML=h||'<div class="empty">Nenhum papel ainda.<br>Sorteie a vila ou escolha papéis na aba <b>Papéis</b>.</div>';
+  // catálogo: todos os papéis, grupos recolhíveis
+  const abertos=new Set([...document.querySelectorAll('#catalogo details[open]')].map(d=>d.dataset.g));
+  $('#catalogo').innerHTML=GRUPOS.map(([g,rot])=>{
+    const rs=ROLES.filter(r=>r.grupo===g),n=rs.reduce((a,r)=>a+q(r.name),0);
+    return `<details class="g" data-g="${g}" ${abertos.has(g)||(!abertos.size&&g==='vila')?'open':''}><summary><span>${rot}</span><span>${n?n+' na vila':''}</span></summary>${rs.map(r=>linha(r,false)).join('')}</details>`}).join('');
+}
+function clique(e){
+  const row=e.target.closest('.role');if(!row)return;
+  const n=row.dataset.n,r=ROLES.find(x=>x.name===n);
+  if(e.target.closest('.info')){abrir(r);return}
+  if(e.target.closest('.fix')){fixos[n]=(fixos[n]||0)+(gerados[n]||0);delete gerados[n];desenhar();atualizar();return}
+  const bt=e.target.closest('button[data-d]');if(!bt)return;
+  if(bt.dataset.d==='1'){if(q(n)<r.max)fixos[n]=(fixos[n]||0)+1}
+  else if(gerados[n]){gerados[n]--;if(!gerados[n])delete gerados[n]}
+  else if(fixos[n]){fixos[n]--;if(!fixos[n])delete fixos[n]}
+  const y=scrollY;desenhar();scrollTo(0,y);atualizar();
+}
+$('#segV').onclick=e=>{const k=e.target.dataset.v;if(!k)return;visao=k;
+  document.querySelectorAll('#segV button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===k));desenhar()};
+$('#vila').onclick=clique;$('#catalogo').onclick=clique;
+$('#filtros').onclick=e=>{
+  const t=e.target.dataset.t;if(!t)return;
+  off.has(t)?off.delete(t):off.add(t);
+  for(const r of ROLES) if(bloqueado(r)){delete fixos[r.name];delete gerados[r.name]}
+  desenharFiltros();desenhar();atualizar();
+};
+function abrir(r){
+  $('#dlg').innerHTML=`<h3>${nomeHTML(r)}</h3>
+  <div class="small">${labelG(r.grupo)} · ${GT[r.time]} · valor ${r.adj>0?'+':''}${r.adj}${r.max>1?' · até '+r.max+' cartas':''}</div>
+  <p><b>Resumo:</b> ${r.acao}</p>
+  ${r.detalhe?`<p>${r.detalhe}</p>`:'<p class="small">Este papel não aparece no manual enviado; vale só o resumo da sua lista.</p>'}
+  ${r.variantes&&r.variantes.length?'<p><b>Variantes do manual</b></p><ul>'+r.variantes.map(v=>`<li>${v}</li>`).join('')+'</ul>':''}
+  <button class="fechar" onclick="dlg.close()">Fechar</button>`;
+  $('#dlg').showModal();
+}
+function desenharCfg(){
+  const n=Math.max(6,Math.min(68,+$('#gN').value||12));
+  $('#cfg').innerHTML=`<p class="hint" style="margin:10px 0 2px">Máximo por categoria: o sorteio escolhe de 0 até esse valor (Investigadores: de 1). Se faltar gente para fechar a vila, completa e, se preciso, passa do máximo. Em branco = padrão para ${n} jogadores. Papéis fixados contam no limite.</p>`+
+  LIMITAVEIS.map(c=>`<div class="cfgrow"><div class="t">${labelG(c)}<small>${ROLES.filter(r=>r.grupo===c).map(r=>r.pt||r.name).join(', ')}${c==='macons'?' · use 0, 2 ou 3':''}</small><small>padrão: ${padr[c]??'…'}</small></div>
+    <input type="number" inputmode="numeric" min="0" max="20" data-c="${c}" value="${limites[c]??''}" placeholder="${padr[c]??''}"></div>`).join('')+
+  '<button class="reset" id="cfgReset">Restaurar padrões</button>';
+}
+async function carregarPadroes(){
+  const n=Math.max(6,Math.min(68,+$('#gN').value||12));
+  try{padr=UW.padroes(n)}catch(e){}
+  desenharCfg();
+}
+$('#cfgBtn').onclick=()=>{const c=$('#cfg');c.hidden=!c.hidden;if(!c.hidden)carregarPadroes()};
+$('#cfg').oninput=e=>{const c=e.target.dataset.c;if(!c)return;const v=e.target.value;v===''?delete limites[c]:limites[c]=Math.max(0,+v);salvar()};
+$('#cfg').onclick=e=>{if(e.target.id==='cfgReset'){limites={};salvar();desenharCfg()}};
+$('#gN').oninput=()=>{if(!$('#cfg').hidden)carregarPadroes()};
+$('#gG').onchange=e=>{$('#gA').value=e.target.value};
+$('#sortear').onclick=async()=>{
+  const b=$('#sortear');b.disabled=true;
+  try{
+    let j;
+    try{j=UW.gerar({n:+$('#gN').value||12,alvo:+$('#gA').value||0,vmax:$('#gMax').value===''?15:+$('#gMax').value,sel:fixos,off:[...off],limites})}
+    catch(e){alert(e.message||'Não foi possível sortear.');return}
+    gerados=j.gerados;$('#genMsg').textContent=j.aviso||'';desenhar();atualizar();scrollTo(0,0);
+  }finally{b.disabled=false}
+};
+$('#fixarTudo').onclick=()=>{for(const n in gerados)fixos[n]=(fixos[n]||0)+gerados[n];gerados={};desenhar();atualizar()};
+$('#limpar').onclick=()=>{if(confirm('Limpar todos os papéis da vila?')){fixos={};gerados={};desenhar();atualizar()}};
+
+async function atualizar(){
+  salvar();
+  dados=UW.vila(total());const b=dados.balanco;
+  $('#nJog').textContent=b.jogadores;$('#nIni').textContent=b.inimigos;$('#saldo').textContent=(b.total>0?'+':'')+b.total;
+  const st=$('#stTxt');st.textContent=b.jogadores?b.texto:'Escolha os papéis';st.className=b.jogadores?b.status:'equilibrada';
+  $('#esp').textContent=b.jogadores?`inimigos esperados: ~${b.esperados}`:'';
+  const pos=Math.max(0,Math.min(100,50+b.total*(50/30)));$('#mark').style.left=`calc(${pos}% - 2px)`;
+  $('#avisos').innerHTML=b.avisos.map(a=>`<li>⚠ ${a}</li>`).join('');
+  desenharRoteiro();desenharPlacar();
+  if(sub==='jogadores')desenharJog();if(sub==='diario')desenharDia();
+}
+
+const feitos=new Set();
+// ---- anotações do narrador (jogadores e diário da noite) ----
+let anot={jog:{},dia:{},ef:{},uso:{},noite:1},sub='roteiro';
+try{anot=Object.assign(anot,JSON.parse(localStorage.getItem('uw3')||'{}'))}catch(e){}
+const salvarA=()=>{try{localStorage.setItem('uw3',JSON.stringify(anot))}catch(e){}desenharPlacar()};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ladoPad=r=>r.time==='vila'?'vila':'ant';
+const ladoDe=(k,r)=>(anot.jog[k]||{}).lado||ladoPad(r);
+const timeDe=(r,k)=>{const l=(anot.jog[k]||{}).lado;return l==='ant'&&r.time==='vila'?'lobos':l==='vila'&&r.time!=='vila'?'vila':r.time};
+function desenharJog(){
+  const xs=[];
+  for(const r of ROLES){const v=q(r.name);for(let i=0;i<v;i++)xs.push({k:r.name+'#'+i,r,i,v})}
+  const row=x=>{const a=anot.jog[x.k]||{};
+    return `<div class="pl ${a.morto?'dead':''}"><span class="dh" data-d="${x.k}" title="Arraste para o outro lado">⠿</span><label>${x.r.pt||x.r.name}${x.v>1?' '+(x.i+1):''}</label>
+    <input data-k="${x.k}" value="${esc(a.nome)}" placeholder="Nome do jogador"><button data-m="${x.k}" aria-label="${a.morto?'Voltou':'Morreu'}">${a.morto?'❤️':'💀'}</button></div>`};
+  const lado=z=>{const l=xs.filter(x=>ladoDe(x.k,x.r)===z);return [...l.filter(x=>x.r.name!=='Villager'),...l.filter(x=>x.r.name==='Villager')]};
+  const zona=(z,t,l)=>`<section class="zona" data-z="${z}"><h2>${t} (${l.length})</h2>${l.map(row).join('')||'<div class="vazio">Arraste alguém para cá</div>'}</section>`;
+  $('#pJog').innerHTML=xs.length?zona('vila','🏘️ Vila',lado('vila'))+zona('ant','🐺 Antagonistas',lado('ant'))+
+    '<p class="small">Anote quem recebeu cada papel. Arraste o ⠿ para passar alguém de um lado ao outro (ex.: Amaldiçoado que virou lobo). Os nomes aparecem como sugestão no Diário.</p>':
+    '<div class="empty">Monte a vila primeiro.</div>';
+}
+let arr=null;
+const zonaEm=(x,y)=>{const e=document.elementFromPoint(x,y);return e&&e.closest('.zona')};
+$('#pJog').addEventListener('pointerdown',e=>{const hd=e.target.closest('.dh');if(!hd)return;e.preventDefault();
+  arr={k:hd.dataset.d,row:hd.closest('.pl')};hd.setPointerCapture(e.pointerId);arr.row.classList.add('arrasta')});
+$('#pJog').addEventListener('pointermove',e=>{if(!arr)return;
+  if(e.clientY<90)scrollBy(0,-14);else if(e.clientY>innerHeight-120)scrollBy(0,14);
+  const z=zonaEm(e.clientX,e.clientY);document.querySelectorAll('.zona').forEach(x=>x.classList.toggle('alvo',x===z))});
+const fimArr=e=>{if(!arr)return;const z=e.type==='pointerup'?zonaEm(e.clientX,e.clientY):null,k=arr.k;arr=null;
+  document.querySelectorAll('.zona').forEach(x=>x.classList.remove('alvo'));
+  if(z){const r=ROLES.find(x=>x.name===k.split('#')[0]),a=anot.jog[k]=anot.jog[k]||{};
+    if(z.dataset.z===ladoPad(r))delete a.lado;else a.lado=z.dataset.z;salvarA()}
+  desenharJog()};
+$('#pJog').addEventListener('pointerup',fimArr);$('#pJog').addEventListener('pointercancel',fimArr);
+$('#pJog').oninput=e=>{const k=e.target.dataset.k;if(!k)return;(anot.jog[k]=anot.jog[k]||{}).nome=e.target.value;salvarA()};
+$('#pJog').onclick=e=>{const k=e.target.dataset.m;if(!k)return;const a=anot.jog[k]=anot.jog[k]||{};a.morto=!a.morto;salvarA();desenharJog()};
+function desenharDia(){
+  if(!dados||!dados.balanco.jogadores){$('#pDia').innerHTML='<div class="empty">Monte a vila primeiro.</div>';return}
+  const n=anot.noite,nomes=Object.values(anot.jog).filter(a=>a.nome&&!a.morto).map(a=>a.nome);
+  const passos=(dados.roteiro[n===1?'primeira':'seguintes']||[]).filter(p=>p.quando!=='ident'&&p.quando!=='trigger');
+  const val=k=>esc(anot.dia[n+'|'+k]);
+  $('#pDia').innerHTML=`<div class="dia"><datalist id="dl">${nomes.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+  <div class="nav2"><button data-nn="-1" ${n<=1?'disabled':''}>‹</button><b>Noite ${n}</b><button data-nn="1">›</button></div>
+  ${passos.map(p=>{const k=p.nomes.join('+');return `<div class="c"><b>${p.papeis.join(' · ')}</b><input list="dl" data-k="${esc(k)}" value="${val(k)}" placeholder="Quem foi o alvo / resultado"></div>`}).join('')}
+  <div class="c"><b>Eliminados na manhã seguinte</b><input list="dl" data-k="mortos" value="${val('mortos')}" placeholder="Quem morreu"></div>
+  <div class="c"><b>Anotações</b><textarea rows="3" data-k="extra" placeholder="Votação do dia, suspeitas, lembretes...">${val('extra')}</textarea></div>
+  <button class="reset" id="limparA">Limpar anotações da partida</button></div>`;
+}
+$('#pDia').oninput=e=>{const k=e.target.dataset.k;if(!k)return;anot.dia[anot.noite+'|'+k]=e.target.value;salvarA()};
+$('#pDia').onclick=e=>{
+  const d=e.target.closest('[data-nn]');
+  if(d){anot.noite=Math.max(1,anot.noite+Number(d.dataset.nn));salvarA();desenharDia();return}
+  if(e.target.id==='limparA'&&confirm('Apagar nomes dos jogadores e o diário das noites?')){anot={jog:{},dia:{},ef:{},uso:{},noite:1};salvarA();desenharJog();desenharDia()}
+};
+$('#segN').onclick=e=>{const k=e.target.dataset.k;if(!k)return;sub=k;
+  document.querySelectorAll('#segN button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));
+  $('#pRoteiro').hidden=k!=='roteiro';$('#pJog').hidden=k!=='jogadores';$('#pDia').hidden=k!=='diario';
+  if(k==='jogadores')desenharJog();if(k==='diario')desenharDia();if(k==='roteiro'&&dados)desenharRoteiro()};
+const abertosE=new Set();
+const instDe=p=>p.nomes.flatMap(nm=>{const r=ROLES.find(x=>x.name===nm),v=q(nm);
+  return Array.from({length:v},(_,i)=>{const k=nm+'#'+i,a=anot.jog[k]||{};return {k,morto:!!a.morto,nome:a.nome||((r.pt||r.name)+(v>1?' '+(i+1):''))}})});
+function setMorto(ks,val){for(const k of ks)(anot.jog[k]=anot.jog[k]||{}).morto=val;salvarA();desenharRoteiro()}
+function placarDados(){
+  const t={vivos:0,total:0,lobos:0,lobosT:0,vamp:0,vampT:0,culto:0,cultoT:0,vila:0,vilaT:0};
+  for(const r of ROLES){const v=q(r.name);for(let i=0;i<v;i++){const vivo=!(anot.jog[r.name+'#'+i]||{}).morto;
+    const tm=timeDe(r,r.name+'#'+i),c=tm==='lobos'?'lobos':tm==='vampiros'?'vamp':tm==='culto'?'culto':'vila';
+    t.total++;t[c+'T']++;if(vivo){t.vivos++;t[c]++}}}
+  return t}
+function vitoria(t){
+  if(!t.total)return null;
+  if(!t.vivos)return '💀 Todos os jogadores estão eliminados.';
+  if(t.lobosT+t.vampT&&!t.lobos&&!t.vamp)return '🏘️ A vila venceu: não restam lobos nem vampiros.'+(t.culto?' (Líder de Culto ainda vivo: confira.)':'');
+  if(t.lobos&&!t.vamp&&t.lobos>=t.vivos-t.lobos)return '🐺 Os lobos venceram: são tantos quanto o resto. Confira Lobo Solitário e amantes.';
+  if(t.vamp&&!t.lobos&&!t.vila&&!t.culto)return '🧛 Os vampiros venceram: só restam vampiros.';
+  return null}
+function desenharPlacar(){
+  const el=document.getElementById('placar');if(!el||!ROLES.length)return;
+  const t=placarDados();if(!t.total){el.innerHTML='';return}
+  const chip=(ic,a,b,c)=>`<span class="pc ${c||''} ${a===0?'zero':''}">${ic} <b>${a}</b>/${b}</span>`,v=vitoria(t);
+  el.innerHTML=`<div class="pcs">${chip('👥',t.vivos,t.total)}${t.lobosT?chip('🐺',t.lobos,t.lobosT,'lb'):''}${t.vampT?chip('🧛',t.vamp,t.vampT,'vp'):''}${t.cultoT?chip('🕯️',t.culto,t.cultoT,'ct'):''}${chip('🏘️',t.vila,t.vilaT,'vl')}</div>`+(v?`<div class="pfim">${v}</div>`:'')}
+const EFEITOS={
+  morre:{l:'Morre essa noite',i:'💀'},mata:{l:'Poção da morte (morre)',i:'☠️'},vida:{l:'Poção da vida (salvo)',i:'🧪'},
+  silencia:{l:'Silenciado essa manhã',i:'🤐'},protege:{l:'Protegido essa noite',i:'🛡️'},afasta:{l:'Fora da vila hoje',i:'🏚️'},
+  marca:{l:'Marcado (morre se for votado)',i:'🩸'},culto:{l:'Entrou no culto',i:'🕯️'},info:{l:'Investigou / resultado',i:'🔍'},
+  par:{l:'Alvos escolhidos',i:'🎯'},transf:{l:'Virou lobo',i:'🐺'},copia:{l:'Copiou o papel de',i:'🎭'},
+  nota:{l:'Anotação livre',i:'📝'}};
+const EF_ROLE={Werewolf:['morre'],'Wolf Cub':['morre'],'Lone Wolf':['morre'],Huntress:['morre'],Revealer:['morre'],
+  Witch:['vida','mata'],Spellcaster:['silencia'],'Old Hag':['afasta'],Bodyguard:['protege'],Priest:['protege'],
+  Vampire:['marca'],'Cult Leader':['culto'],Seer:['info'],'Aura Seer':['info'],'Mystic Seer':['info'],Mentalist:['info'],
+  'P.I.':['info'],Cupid:['par'],Hoodlum:['par'],'Alpha Wolf':['transf'],Doppelganger:['copia']};
+const efDe=p=>[...new Set(p.nomes.flatMap(n=>EF_ROLE[n]||[]))];
+const kcall=p=>p.nomes.join('+');
+const abertos=new Set();
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const partes=v=>String(v||'').split(/[,;+\/&]|\s+e\s+/i).map(x=>x.trim()).filter(Boolean);
+const papelPt=k=>k.split('+').map(x=>{const r=ROLES.find(y=>y.name===x);return r?(r.pt||r.name):x}).join(' / ');
+function camposDe(p){const n=anot.noite,k=kcall(p);
+  return [...efDe(p).map(f=>({st:'ef',k:n+'|'+k+'|'+f,f}))]}
+const temNota=p=>camposDe(p).some(c=>String(anot[c.st][c.k]||'').trim());
+const usosDe=p=>p.nomes.flatMap(n=>{const r=ROLES.find(x=>x.name===n);
+  if(n==='Witch')return [{k:'Witch|vida',l:'Vida usada'},{k:'Witch|morte',l:'Morte usada'}];
+  return (r.noite&&r.noite.quando==='once')||n==='Troublemaker'?[{k:n+'|poder',l:'Poder usado'}]:[]});
+function abrirPop(p){if(!p)return;
+  const nomes=Object.values(anot.jog).filter(a=>a.nome&&!a.morto).map(a=>a.nome);
+  $('#dlg').innerHTML=`<datalist id="dlp">${nomes.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+  <h3 class="popn">${esc(papelPt(p.nomes.join('+')))}</h3>
+  ${camposDe(p).map(c=>{const E=EFEITOS[c.f];return `<label class="efl"><span>${E.i} ${E.l}</span><input list="dlp" data-st="ef" data-k="${esc(c.k)}" value="${esc(anot.ef[c.k])}" placeholder="Nome (vários: vírgula)"></label>`}).join('')}
+  <button class="fechar" onclick="dlg.close()">Fechar</button>`;
+  $('#dlg').showModal()}
+$('#dlg').addEventListener('input',e=>{const t=e.target;if(t.dataset.st!=='ef')return;anot.ef[t.dataset.k]=t.value;salvarA()});
+$('#dlg').addEventListener('close',()=>{if(dados&&dados.balanco.jogadores)desenharRoteiro()});
+function setNoite(n){anot.noite=Math.max(1,n);salvarA();desenharRoteiro();if(sub==='diario')desenharDia()}
+function desenharRoteiro(){
+  aba=anot.noite===1?'primeira':'seguintes';
+  document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===aba));
+  const r=dados.roteiro,lista=r[aba]||[];
+  if(!dados.balanco.jogadores){$('#roteiro').innerHTML='<div class="empty">Monte a vila primeiro: o roteiro aparece aqui só com os papéis ativos.</div>';return}
+  const nomes=Object.values(anot.jog).filter(a=>a.nome&&!a.morto).map(a=>a.nome);
+  let h=`<datalist id="dlr">${nomes.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+    <div class="nav2"><button data-nn="-1" ${anot.noite<=1?'disabled':''}>‹</button><b>Noite ${anot.noite}</b><button data-nn="1">›</button></div>`;
+  h+=lista.map((p,i)=>{
+    const id=`n${anot.noite}-${i}`,d=feitos.has(id);
+    const ins=instDe(p),nm=ins.filter(x=>x.morto).length,tot=ins.length,mortoTodos=tot>0&&nm===tot;
+    const btnE=!tot?'':mortoTodos?`<button class="elim" data-rv="${i}">↩ Voltou</button>`:tot===1?`<button class="elim" data-el="${i}">☠ Eliminado</button>`:`<button class="elim ${nm?'parc':''}" data-ep="${id}">☠ Eliminados ${nm}/${tot}</button>`;
+    const painelE=(tot>1&&abertosE.has(id)&&!mortoTodos)?`<div class="elims">${ins.map(x=>`<button class="chipx ${x.morto?'on':''}" data-ek="${esc(x.k)}">${x.morto?'❤️':'💀'} ${esc(x.nome)}</button>`).join('')}</div>`:'';
+    const btnU=usosDe(p).map(u=>`<button class="elim ${anot.uso[u.k]?'on':''}" data-us="${esc(u.k)}">⚡ ${u.l}</button>`).join('');
+    return `<div class="call ${d?'done':''} ${mortoTodos?'dead':''}"><div class="h"><span class="who">${p.papeis.join(' · ')}</span><span style="display:flex;gap:8px;align-items:center"><span class="w">${p.quando_txt}</span>${efDe(p).length?`<button class="nbtn ${temNota(p)?'tem':''}" data-ab="${i}" aria-label="Anotar alvo/resultado">📝</button>`:''}</span></div>
+      <q>“${p.fala}”</q><div class="a">${p.acao}</div>
+      <details><summary>Regras detalhadas</summary>${p.nomes.map(n=>{const r=ROLES.find(x=>x.name===n);return `<p><b>${r.pt||r.name}:</b> ${r.detalhe||r.acao}</p>`+(r.variantes&&r.variantes.length?'<ul>'+r.variantes.map(v=>`<li>${v}</li>`).join('')+'</ul>':'')}).join('')}</details>
+      ${p.conferir?'<div class="warn">⚠ Conferir texto/regra na sua carta</div>':''}
+      ${painelE}<div class="acoes"><label><input type="checkbox" data-id="${id}" ${d?'checked':''}> Chamado</label><span class="bts">${btnU}${btnE}</span></div></div>`}).join('');
+  if(!lista.length)h+='<div class="empty">Nenhum papel desta seleção age à noite.</div>';
+  if(r.sem_acao.length)h+=`<p class="small">Sem chamada noturna: ${r.sem_acao.join(', ')}.</p>`;
+  h+='<button class="relbtn" id="relBtn">🌙 Encerrar noite · Relatório</button><button class="reset" id="zerar">Desmarcar chamados</button>';
+  $('#roteiro').innerHTML=h;
+}
+function relatorio(){
+  const n=anot.noite,ents=[];
+  for(const [key,val] of Object.entries(anot.ef)){
+    const i=key.indexOf('|'),j=key.lastIndexOf('|');
+    if(+key.slice(0,i)!==n||!String(val).trim())continue;
+    ents.push({kind:key.slice(j+1),papel:papelPt(key.slice(i+1,j)),alvos:partes(val)});
+  }
+  const pess=new Map();
+  for(const e of ents)for(const a of e.alvos){const id=norm(a);if(!pess.has(id))pess.set(id,{nome:a,it:[]});pess.get(id).it.push(e)}
+  const jogs=Object.values(anot.jog).filter(a=>a.nome);
+  const jogNomes=new Set(jogs.map(a=>norm(a.nome))),mortosJ=new Set(jogs.filter(a=>a.morto).map(a=>norm(a.nome)));
+  const L=(it,ks)=>it.filter(x=>ks.includes(x.kind)),pp=a=>a.map(x=>x.papel).join(', ');
+  const al=[];
+  for(const [id,p] of pess){
+    const N=`<b>${esc(p.nome)}</b>`;
+    const mo=L(p.it,['morre','mata']),si=L(p.it,['silencia']),pr=L(p.it,['protege']),vi=L(p.it,['vida']),af=L(p.it,['afasta']);
+    if(mo.length&&si.length)al.push(['bad',`${N} morre (${pp(mo)}) e também foi silenciado (${pp(si)}): o silêncio não vale, a pessoa já saiu do jogo.`]);
+    if(mo.length&&pr.length)al.push(['warn',`${N} foi alvo de morte (${pp(mo)}) mas estava protegido (${pp(pr)}): provavelmente sobrevive. Confira a regra.`]);
+    if(mo.length&&vi.length)al.push(['warn',`${N} foi alvo de morte (${pp(mo)}) e recebeu a poção da vida (${pp(vi)}): confira se a morte pode ser anulada.`]);
+    if(mo.length>1)al.push(['warn',`${N} recebeu ${mo.length} mortes (${pp(mo)}): só morre uma vez.`]);
+    if(si.length&&af.length)al.push(['info',`${N} está silenciado e também fora da vila hoje (${pp(af)}).`]);
+    if(mortosJ.has(id))al.push(['warn',`${N} já está marcado como morto em Jogadores.`]);
+    else if(jogNomes.size&&!jogNomes.has(id))al.push(['info',`“${esc(p.nome)}” não está na lista de Jogadores (erro de digitação?).`]);
+  }
+  (dados.roteiro[aba]||[]).forEach((p,i)=>{
+    if(!feitos.has(`n${n}-${i}`)||!efDe(p).length)return;
+    const ii=instDe(p);if(ii.length&&ii.every(x=>x.morto))return;
+    if(!camposDe(p).filter(c=>c.st==='ef').some(c=>String(anot.ef[c.k]||'').trim()))
+      al.push(['info',`${p.papeis.join(' · ')} foi chamado, mas não tem alvo anotado.`]);
+  });
+  const nomesDe=ks=>[...pess.values()].filter(p=>L(p.it,ks).length);
+  const morrem=nomesDe(['morre','mata']).map(p=>esc(p.nome)+(L(p.it,['protege','vida']).length?' <small>(talvez salvo)</small>':''));
+  const silenc=nomesDe(['silencia']).map(p=>esc(p.nome)+(L(p.it,['morre','mata']).length?' <small>(morre: sem efeito)</small>':''));
+  const prot=nomesDe(['protege']).map(p=>esc(p.nome));
+  const diaMortos=anot.dia[n+'|mortos'];
+  const ordem=['morre','mata','silencia','protege','vida','afasta','marca','culto','par','transf','copia','info'];
+  const det=ordem.filter(k=>ents.some(e=>e.kind===k)).map(k=>`<h4>${EFEITOS[k].i} ${EFEITOS[k].l}</h4><ul>${ents.filter(e=>e.kind===k).map(e=>`<li><b>${e.papel}:</b> ${e.alvos.map(esc).join(', ')}</li>`).join('')}</ul>`).join('');
+  const notas=Object.entries(anot.dia).filter(([k,v])=>k.startsWith(n+'|')&&!['mortos','extra'].includes(k.slice(String(n).length+1))&&String(v).trim())
+    .map(([k,v])=>`<li><b>${papelPt(k.slice(String(n).length+1))}:</b> ${esc(v)}</li>`).join('');
+  const vazio=!ents.length&&!notas&&!diaMortos;
+  return `<h3>🌙 Relatório · Noite ${n}</h3><div class="rel">`+(vazio?'<p>Nenhuma anotação nesta noite. Toque no 📝 dos papéis chamados para registrar alvos.</p>':`
+    <div class="rsum"><div><b>💀 Morrem:</b> ${morrem.join(', ')||'ninguém anotado'}</div>
+    <div><b>🤐 Silenciados:</b> ${silenc.join(', ')||'ninguém'}</div>
+    ${prot.length?`<div><b>🛡️ Protegidos:</b> ${prot.join(', ')}</div>`:''}
+    ${diaMortos?`<div><b>Eliminados (Diário):</b> ${esc(diaMortos)}</div>`:''}</div>
+    ${al.length?`<h4>⚠ Conferir</h4><ul>${al.map(([t,x])=>`<li class="l-${t}">${x}</li>`).join('')}</ul>`:'<p class="l-ok">✔ Nenhum conflito encontrado.</p>'}
+    ${det}${notas?`<h4>📝 Outras anotações</h4><ul>${notas}</ul>`:''}`)+`</div><button class="fechar" onclick="dlg.close()">Fechar</button>`;
+}
+$('#roteiro').onchange=e=>{const id=e.target.dataset.id;if(!id)return;e.target.checked?feitos.add(id):feitos.delete(id);desenharRoteiro()};
+$('#roteiro').onclick=e=>{
+  const nn=e.target.closest('[data-nn]');if(nn){setNoite(anot.noite+Number(nn.dataset.nn));return}
+  const el=e.target.closest('[data-el]');if(el){setMorto(instDe((dados.roteiro[aba]||[])[+el.dataset.el]).map(x=>x.k),true);return}
+  const rv=e.target.closest('[data-rv]');if(rv){setMorto(instDe((dados.roteiro[aba]||[])[+rv.dataset.rv]).map(x=>x.k),false);return}
+  const ep=e.target.closest('[data-ep]');if(ep){const id=ep.dataset.ep;abertosE.has(id)?abertosE.delete(id):abertosE.add(id);desenharRoteiro();return}
+  const ek=e.target.closest('[data-ek]');if(ek){const k=ek.dataset.ek;setMorto([k],!(anot.jog[k]||{}).morto);return}
+  const ab=e.target.closest('[data-ab]');if(ab){abrirPop((dados.roteiro[aba]||[])[+ab.dataset.ab]);return}
+  const us=e.target.closest('[data-us]');if(us){const k=us.dataset.us;anot.uso[k]=!anot.uso[k];salvarA();desenharRoteiro();return}
+  if(e.target.id==='relBtn'){$('#dlg').innerHTML=relatorio();$('#dlg').showModal();return}
+  if(e.target.id==='zerar'){feitos.clear();desenharRoteiro()}};
+$('#seg').onclick=e=>{const k=e.target.dataset.k;if(!k)return;setNoite(k==='primeira'?1:Math.max(2,anot.noite))};
+document.querySelector('nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
+  document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b===e.target));
+  for(const k of ['Vila','Papeis','Narr'])$('#tela'+k).hidden=t!==k;document.body.dataset.tela=t;scrollTo(0,0)};
+// ---- deslizar para trocar as abas do Narrador ----
+(()=>{const el=$('#telaNarr'),ordem=['roteiro','jogadores','diario'];let x0=0,y0=0,ok=false;
+  el.addEventListener('touchstart',e=>{const t=e.touches[0];x0=t.clientX;y0=t.clientY;ok=e.touches.length===1&&!e.target.closest('input,textarea,select')},{passive:true});
+  el.addEventListener('touchend',e=>{if(!ok)return;ok=false;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+    if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6)return;
+    const n=ordem.indexOf(sub)+(dx<0?1:-1);if(n<0||n>=ordem.length)return;
+    document.querySelector(`#segN button[data-k="${ordem[n]}"]`).click();scrollTo(0,0)},{passive:true});
+})();
+// ---- estado da interface salvo no navegador (aba aberta, chamados, campos do sorteio) ----
+let pronto=false;
+function salvarUI(){if(!pronto)return;try{localStorage.setItem('uw4',JSON.stringify({tela:document.body.dataset.tela,sub,feitos:[...feitos],
+  gN:$('#gN').value,gMax:$('#gMax').value,gA:$('#gA').value,gG:$('#gG').value}))}catch(e){}}
+function restaurarUI(){
+  try{const u=JSON.parse(localStorage.getItem('uw4')||'{}');
+    for(const [id,k] of [['gN','gN'],['gMax','gMax'],['gA','gA'],['gG','gG']])if(u[k]!==undefined&&u[k]!==null)$('#'+id).value=u[k];
+    (u.feitos||[]).forEach(x=>feitos.add(x));
+    if(['jogadores','diario'].includes(u.sub))document.querySelector(`#segN button[data-k="${u.sub}"]`).click();
+    else desenharRoteiro();
+    if(['Papeis','Narr'].includes(u.tela))document.querySelector(`nav button[data-t="${u.tela}"]`).click();
+  }catch(e){}
+  pronto=true;desenharPlacar();
+}
+for(const ev of ['click','input','change'])document.addEventListener(ev,()=>setTimeout(salvarUI),true);
+addEventListener('pagehide',()=>{if(!pronto)return;salvarUI();salvarA();salvar()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&pronto){salvarUI();salvarA();salvar()}});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+init().then(restaurarUI,restaurarUI);
+</script>
+</body>
 </html>
